@@ -98,6 +98,7 @@ h3{font:400 1.05rem/1.25 var(--f-h);margin:0}
 .item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;border:1px solid var(--line);border-left:5px solid var(--c,var(--ac));background:var(--surface);border-radius:6px;padding:9px 12px;width:100%;text-align:left}
 button.item:hover{outline:2px solid var(--ink);outline-offset:1px}
 .item .t{min-width:0;overflow-wrap:anywhere}
+.hc{position:relative}.hc>.item{padding-right:52px}.chk{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;border:1.5px solid var(--ok);background:var(--surface);color:var(--ok);font:700 15px/1 var(--f-h);cursor:pointer;display:grid;place-items:center}.chk:hover,.chk:focus-visible{background:var(--ok);color:#fff}
 .item .t small{display:block;color:var(--ink2);font-size:12.5px}
 .sec{margin:22px 0 8px;display:flex;gap:10px;align-items:baseline}
 .sec h3{font-size:.95rem}
@@ -257,7 +258,7 @@ const OWN=['Yara','Chrys','Robertha'];
 const CH=['Instagram','LinkedIn','YouTube','Spotify','Site'];
 const FMT=['Reel','Carrossel','Post','Story','Episódio','Vídeo','Artigo','Página'];
 const EDI=[['Ciranda, NR-1 e institucional','teal'],['Laboratório e convites','mus'],['Dados e Espiral de Clareza','terra'],['Vozes e PodSer','mag']];
-const PST=['Ideia','Em produção','Aguardando aprovação','Aprovado','Agendado','Publicado'];
+const PST=['Ideia','Em produção','Aguardando aprovação','Aprovado','Agendado','Publicado','Falhou'];
 const PRS=['Rascunho','Em elaboração','Enviada','Aguardando retorno','Em negociação','Fechada','Perdida'];
 const LIBC=['Marca e identidade','Propostas e comercial','PodSer','Palestras','Institucional','Instagram','Site','Vídeos'];
 const THEMES=['Alegria','Consciência','Energia e vibração','Emoções'];
@@ -271,6 +272,8 @@ const iso=d=>d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
 const TODAY=iso(new Date());
 const addDays=(s,n)=>{const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
 const diff=(a,b)=>Math.round((new Date(a+'T12:00:00')-new Date(b+'T12:00:00'))/864e5);
+const isLate=p=>p.status==='Falhou'||(p.status!=='Publicado'&&p.status!=='Agendado'&&!!p.date&&p.date<TODAY);
+const conferir=p=>p.status==='Agendado'&&!!p.date&&p.date<TODAY;
 const fd=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'sem data';
 const fdl=s=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
 const WD=['dom','seg','ter','qua','qui','sex','sáb'];
@@ -302,16 +305,16 @@ function nextMeet(){const n=new Date();for(let i=0;i<9;i++){const d=new Date(n);
 function slots(){const a=cfg('podser').anchor||addDays(TODAY,((4-new Date().getDay()+7)%7)||7);const r=[];for(let i=0;i<12;i++){const d=addDays(a,i*14);if(diff(d,TODAY)>=-28)r.push(d)}return r}
 function proposalFlag(p){
  if(['Fechada','Perdida'].includes(p.status))return null;
- if(['Enviada','Aguardando retorno'].includes(p.status)){const f=p.followUp||(p.sentAt?addDays(p.sentAt,7):'');if(f){const n=diff(f,TODAY);if(n<=0)return{late:true,t:n===0?'Pedir retorno hoje':'Retorno atrasado há '+(-n)+' d',d:f}; if(n<=2)return{soon:true,t:'Pedir retorno em '+n+' d',d:f}}return null}
+ if(['Enviada','Aguardando retorno'].includes(p.status)){const f=p.followUp||(p.sentAt?addDays(p.sentAt,7):'');if(f&&p.retornoOk===f)return null;if(f){const n=diff(f,TODAY);if(n<=0)return{late:true,t:n===0?'Pedir retorno hoje':'Retorno atrasado há '+(-n)+' d',d:f}; if(n<=2)return{soon:true,t:'Pedir retorno em '+n+' d',d:f}}return null}
  if(p.sendBy){const n=diff(p.sendBy,TODAY);if(n<0)return{late:true,t:'Envio atrasado há '+(-n)+' d',d:p.sendBy};if(n<=2)return{soon:true,t:n===0?'Enviar hoje':'Enviar em '+n+' d',d:p.sendBy}}
  return null}
 function alerts(){
  const a=[];
- D.posts.forEach(p=>{if(p.status!=='Publicado'&&p.date&&p.date<TODAY)a.push({tab:'com',t:p.title,s:'Post atrasado · '+p.channel+' · '+fd(p.date),c:edColor(p.ed),id:p.id,k:'post'})});
- D.props.forEach(p=>{const f=proposalFlag(p);if(f&&f.late)a.push({tab:'emp',t:'Proposta '+(p.num||'')+' · '+p.company,s:f.t,c:'var(--terra)',id:p.id,k:'prop'})});
- D.tasks.forEach(t=>{if(!t.done&&t.due&&t.due<TODAY)a.push({tab:TABS.some(x=>x[0]===t.area)?t.area:'hoje',t:t.title,s:'Tarefa atrasada · '+(t.owner||'sem responsável')+' · '+fd(t.due),c:'var(--mus)',id:t.id,k:'task'})});
+ D.posts.forEach(p=>{if(isLate(p))a.push({tab:'com',t:p.title,s:(p.status==='Falhou'?'Falha na publicação · ':'Post atrasado · ')+p.channel+' · '+fd(p.date),c:edColor(p.ed),id:p.id,k:'post',chk:'post'})});
+ D.props.forEach(p=>{const f=proposalFlag(p);if(f&&f.late)a.push({tab:'emp',t:'Proposta '+(p.num||'')+' · '+p.company,s:f.t,c:'var(--terra)',id:p.id,k:'prop',chk:'prop'})});
+ D.tasks.forEach(t=>{if(!t.done&&t.due&&t.due<TODAY)a.push({tab:TABS.some(x=>x[0]===t.area)?t.area:'hoje',t:t.title,s:'Tarefa atrasada · '+(t.owner||'sem responsável')+' · '+fd(t.due),c:'var(--mus)',id:t.id,k:'task',chk:'task'})});
  const ps=D.podser.reduce((m,x)=>(m[x.id]=x,m),{});
- slots().forEach(d=>{if(d<TODAY&&(ps[d]||{}).status!=='Publicado')a.push({tab:'pod',t:'PodSer de '+fd(d)+(ps[d]&&ps[d].tema?' · '+ps[d].tema:''),s:'Publicação passou sem marcar como publicado',c:'var(--mag)',id:d,k:'pod'})});
+ slots().forEach(d=>{if(d<TODAY&&(ps[d]||{}).status!=='Publicado')a.push({tab:'pod',t:'PodSer de '+fd(d)+(ps[d]&&ps[d].tema?' · '+ps[d].tema:''),s:'Publicação passou sem marcar como publicado',c:'var(--mag)',id:d,k:'pod',chk:'pod'})});
  return a}
 function weekPosts(){return D.posts.filter(p=>p.date&&diff(p.date,TODAY)>=0&&diff(p.date,TODAY)<=7&&p.status!=='Publicado')}
 
@@ -354,11 +357,11 @@ const obadge=o=>{const l=lane(o);return `<i class="owner" style="--oc:var(${OC[l
 function dayItems(d){
  const r=[];const w=new Date(d+'T12:00').getDay();
  D.tasks.forEach(t=>{if(t.due===d)r.push({ln:lane(t.owner),k:'task',t:t.title,c:'var(--ink2)',id:t.id,done:t.done,late:!t.done&&d<TODAY})});
- D.posts.forEach(p=>{if(p.date===d)r.push({ln:lane(p.owner),k:'post',t:(p.channel||'').slice(0,2)+' · '+p.title,c:edColor(p.ed),id:p.id,act:'pedit',done:p.status==='Publicado',late:p.status!=='Publicado'&&d<TODAY})});
+ D.posts.forEach(p=>{if(p.date===d)r.push({ln:lane(p.owner),k:'post',t:(p.channel||'').slice(0,2)+' · '+p.title,c:edColor(p.ed),id:p.id,act:'pedit',done:p.status==='Publicado',late:p.status==='Falhou'||(p.status!=='Publicado'&&p.status!=='Agendado'&&d<TODAY)})});
  D.props.forEach(p=>{if(['Fechada','Perdida'].includes(p.status))return;
   const f=p.followUp||(p.sentAt&&['Enviada','Aguardando retorno'].includes(p.status)?addDays(p.sentAt,7):'');
   if(p.sendBy===d&&!p.sentAt)r.push({ln:lane(p.owner),k:'prop',t:'Enviar proposta '+(p.num||'')+' · '+p.company,c:'var(--terra)',id:p.id,act:'pedit2',late:d<TODAY});
-  if(f===d)r.push({ln:lane(p.owner),k:'prop',t:'Pedir retorno · '+p.company,c:'var(--terra)',id:p.id,act:'pedit2',late:d<TODAY})});
+  if(f===d&&p.retornoOk!==f)r.push({ln:lane(p.owner),k:'prop',t:'Pedir retorno · '+p.company,c:'var(--terra)',id:p.id,act:'pedit2',late:d<TODAY})});
  if(w===2||w===4)r.push({ln:'Todas',k:'mt',t:'9h Reunião Alegre-Ser',c:'var(--teal-d)',act:'go',tab:'hoje'});
  if(slots().includes(d)){const s=byId('podser',d)||{};r.push({ln:'Todas',k:'pod',t:'PodSer'+(s.tema?' · '+s.tema:''),c:'var(--mag)',act:'go',tab:'pod'})}
  return r}
@@ -386,12 +389,14 @@ function meetSheet(k){
  ${past.length?`<p class="small" style="margin:14px 0 4px"><b>Reuniões anteriores</b></p><div class="row">${past.map(x=>`<button class="chip" data-act="mold" data-k="${x.id}">${fd(x.id)}</button>`).join('')}</div>`:''}`)}
 function oldMeetSheet(k){const d=byId('meets',k)||{},ts=D.tasks.filter(x=>x.meet===k),ls=String(d.pauta||'').split('\n').map(x=>x.trim()).filter(Boolean),pc=d.pc||{};
  sheet(`<p class="eyebrow">Reunião de ${fdl(k)}</p><h2 style="font-size:1.3rem">Pauta e decisões</h2>${ls.length?`<ul style="margin:6px 0;padding-left:0;list-style:none">${ls.map((x,i)=>`<li>${pc[i]?'<span style="color:var(--ok)">✔</span>':'<span class="small">•</span>'} ${esc(x)}</li>`).join('')}</ul>`:'<p class="small">Sem pauta registrada.</p>'}${d.notes?`<h4>Anotações e decisões</h4><div class="pre">${esc(d.notes)}</div>`:''}${ts.length?`<h4>Tarefas dessa reunião</h4>${ts.map(taskRow).join('')}`:''}<div class="row" style="margin-top:12px"><button class="btn ghost sm" data-act="dlgx">Fechar</button></div>`)}
-function fItem(o){return `<li><button class="item fi" style="--c:${o.c||'var(--ink2)'}" data-act="${o.act||'go'}" ${o.tab?`data-tab="${o.tab}"`:''} ${o.id?`data-id="${o.id}"`:''}><i class="dot"></i><span class="t">${esc(o.t)}<small>${esc(o.s)}</small></span>${o.late?pill('atrasado','late'):''}</button></li>`}
+function chkBtn(kind,id,t){return `<button class="chk" data-act="achk" data-k="${kind}" data-id="${id}" title="${t}" aria-label="${t}">✓</button>`}
+const CHKT={post:'Marcar como publicado',prop:'Já resolvi (enviei ou recebi retorno)',task:'Concluir',pod:'Marcar como publicado'};
+function fItem(o){return `<li class="${o.chk?'hc':''}"><button class="item fi" style="--c:${o.c||'var(--ink2)'}" data-act="${o.act||'go'}" ${o.tab?`data-tab="${o.tab}"`:''} ${o.id?`data-id="${o.id}"`:''}><i class="dot"></i><span class="t">${esc(o.t)}<small>${esc(o.s)}</small></span>${o.late?pill('atrasado','late'):''}</button>${o.chk?chkBtn(o.chk,o.id,CHKT[o.chk]):''}</li>`}
 
 function trendData(){
  const m={},get=k=>m[k]||(m[k]={done:0,sched:0,todo:0,late:0});
  const put1=(d,st)=>{if(!d)return;const o=get(d.slice(0,7));o[st]++};
- D.posts.forEach(p=>{if(!p.date)return;put1(p.date,p.status==='Publicado'?'done':p.status==='Agendado'?'sched':p.date<TODAY?'late':'todo')});
+ D.posts.forEach(p=>{if(!p.date)return;put1(p.date,p.status==='Publicado'?'done':p.status==='Agendado'?'sched':(p.date<TODAY||p.status==='Falhou')?'late':'todo')});
  D.tasks.forEach(x=>{const d=x.due||(x.ts?iso(new Date(x.ts)):'');if(!d)return;put1(d,x.done?'done':d<TODAY?'late':'todo')});
  D.props.forEach(p=>{if(!p.sendBy)return;const sent=['Enviada','Aguardando retorno','Fechada','Perdida'].includes(p.status);put1(p.sendBy,sent?'done':p.sendBy<TODAY?'late':'todo')});
  const cur=TODAY.slice(0,7),nx=ytMonths()[2],ks=Object.keys(m).filter(k=>k<=nx).sort();
@@ -415,9 +420,9 @@ function vTrend(){
  <ul class="small" style="margin:8px 0 0;padding-left:18px;display:grid;gap:3px">${ins.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>`}
 function fLists(){
  const open=D.tasks.filter(x=>!x.done),tk=a=>open.filter(x=>x.area===a||(a==='cur'&&x.course));
- const tItem=x=>({t:x.title,s:(x.owner||'sem responsável')+' · '+(x.due?fd(x.due):'sem prazo'),late:x.due&&x.due<TODAY,act:'tedit',id:x.id,c:'var(--mus)',k:x.due||'9'});
- const com=D.posts.filter(p=>p.status!=='Publicado'&&p.status!=='Agendado'&&p.channel).map(p=>({t:p.title||'(sem título)',s:(p.channel||'')+' · '+(p.date?fd(p.date):'sem data')+' · '+(p.status||''),late:p.date&&p.date<TODAY,act:'pedit',id:p.id,c:chCol(p.channel),k:p.date||'9'})).concat(tk('com').map(tItem));
- const emp=D.props.map(p=>({p,f:proposalFlag(p)})).filter(x=>x.f||['Rascunho','Em elaboração','Ideia'].includes(x.p.status)).map(x=>({t:'Proposta '+(x.p.num||'')+' · '+x.p.company,s:x.f?x.f.t:(x.p.status||''),late:x.f&&x.f.late,act:'pedit2',id:x.p.id,c:'var(--terra)',k:(x.f&&x.f.d)||'9'})).concat(tk('emp').map(tItem));
+ const tItem=x=>({t:x.title,s:(x.owner||'sem responsável')+' · '+(x.due?fd(x.due):'sem prazo'),late:x.due&&x.due<TODAY,act:'tedit',id:x.id,c:'var(--mus)',k:x.due||'9',chk:'task'});
+ const com=D.posts.filter(p=>p.status!=='Publicado'&&p.status!=='Agendado'&&p.channel).map(p=>({t:p.title||'(sem título)',s:(p.channel||'')+' · '+(p.date?fd(p.date):'sem data')+' · '+(p.status||''),late:isLate(p),act:'pedit',id:p.id,c:chCol(p.channel),k:p.date||'9',chk:'post'})).concat(tk('com').map(tItem));
+ const emp=D.props.map(p=>({p,f:proposalFlag(p)})).filter(x=>x.f||['Rascunho','Em elaboração','Ideia'].includes(x.p.status)).map(x=>({t:'Proposta '+(x.p.num||'')+' · '+x.p.company,s:x.f?x.f.t:(x.p.status||''),late:x.f&&x.f.late,act:'pedit2',id:x.p.id,c:'var(--terra)',k:(x.f&&x.f.d)||'9',chk:x.f?'prop':''})).concat(tk('emp').map(tItem));
  const cur=tk('cur').map(tItem),oth=open.filter(x=>!['com','emp','cur'].includes(x.area)&&!x.course).map(tItem);
  const so=l=>l.sort((a,b)=>(a.k<b.k?-1:a.k>b.k?1:0));
  return {com:so(com),emp:so(emp),cur:so(cur),oth:so(oth)}}
@@ -460,7 +465,7 @@ function vHoje(){
  }
  return head('Início','Calendário da equipe','Em cada dia, o que cada uma precisa fazer: tarefas, posts, propostas, reuniões e PodSer. Toque em “novo” para criar uma tarefa já na data e na pessoa certas.')+
  `<div class="grid" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));align-items:start">
-  <section class="card hl" style="--ac:var(--alert)"><h3>Atrasado ${al.length?pill(al.length,'late'):''}</h3>${al.length?`<ul class="list">${al.slice(0,4).map(a=>`<li><button class="item" style="--c:${a.c}" data-act="go" data-tab="${a.tab}"><i class="dot" style="--c:${a.c}"></i><span class="t">${esc(a.t)}<small>${esc(a.s)}</small></span></button></li>`).join('')}</ul>${al.length>4?`<p class="small" style="margin:8px 0 0">e mais ${al.length-4} (veja nas abas)</p>`:''}`:'<div class="empty">Nada atrasado agora.</div>'}</section>
+  <section class="card hl" style="--ac:var(--alert)"><h3>Atrasado ${al.length?pill(al.length,'late'):''}</h3>${al.length?`<ul class="list">${al.slice(0,8).map(a=>`<li class="hc"><button class="item" style="--c:${a.c}" data-act="go" data-tab="${a.tab}"><i class="dot" style="--c:${a.c}"></i><span class="t">${esc(a.t)}<small>${esc(a.s)}</small></span></button>${a.chk?chkBtn(a.chk,a.id,CHKT[a.chk]):''}</li>`).join('')}</ul>${al.length>8?`<p class="small" style="margin:8px 0 0">e mais ${al.length-8} (veja nas abas)</p>`:''}`:'<div class="empty">Nada atrasado agora.</div>'}</section>
   ${meetCard(m,link)}</div>
  ${vFalta()}
  ${vSemData()}
@@ -598,8 +603,8 @@ function planCard(){const pm=planMeeting(),n=diff(pm.d,TODAY),cnt=D.posts.filter
  <section class="card" style="margin-bottom:16px"><h3 style="margin:0 0 6px">Regras da comunicação</h3><ul class="small" style="margin:0;padding-left:18px;display:grid;gap:4px"><li>Programação do mês seguinte: toda reunião de terça ou quinta a partir do dia 20.</li><li>Agendamento: só depois que o conteúdo é aprovado, a Claude agenda a publicação. A situação passa a Agendado e, depois de ir ao ar, a Publicado.</li></ul></section>`}
 function vLst(){
  const f=D.posts.filter(p=>S.chf==='Todos'||p.channel===S.chf);
- const grp=[['Atrasados',f.filter(p=>p.status!=='Publicado'&&p.date&&p.date<TODAY),'late'],['Próximos 7 dias',f.filter(p=>p.status!=='Publicado'&&p.date&&diff(p.date,TODAY)>=0&&diff(p.date,TODAY)<=7)],['Mais adiante',f.filter(p=>p.status!=='Publicado'&&p.date&&diff(p.date,TODAY)>7)],['Sem data definida',f.filter(p=>p.status!=='Publicado'&&!p.date),'warn'],['Publicados',f.filter(p=>p.status==='Publicado').sort((a,b)=>(b.date||'')<(a.date||'')?-1:1).slice(0,8),'ok']];
- return planCard()+chFilter()+grp.map(([n,l,c])=>`<div class="sec"><h3>${n}</h3>${pill(l.length,c)}</div>${l.length?`<ul class="list">${l.sort((a,b)=>(a.date||'z')<(b.date||'z')?-1:1).map(p=>`<li><button class="item" data-act="pedit" data-id="${p.id}" style="--c:${edColor(p.ed)}"><i class="dot"></i><span class="t">${esc(p.title)}<small>${esc(p.channel)} · ${esc(p.fmt||'')} · ${fd(p.date)}${p.owner?' · '+esc(p.owner):''}</small></span>${pill(p.status,p.status==='Publicado'?'ok':'')}</button></li>`).join('')}</ul>`:'<div class="empty">Nada aqui.</div>'}`).join('')}
+ const grp=[['Atrasados ou com falha',f.filter(isLate),'late'],['Agendados com data passada: conferir se foi ao ar',f.filter(conferir),'warn'],['Próximos 7 dias',f.filter(p=>p.status!=='Publicado'&&p.status!=='Falhou'&&p.date&&diff(p.date,TODAY)>=0&&diff(p.date,TODAY)<=7)],['Mais adiante',f.filter(p=>p.status!=='Publicado'&&p.status!=='Falhou'&&p.date&&diff(p.date,TODAY)>7)],['Sem data definida',f.filter(p=>p.status!=='Publicado'&&p.status!=='Falhou'&&!p.date),'warn'],['Publicados',f.filter(p=>p.status==='Publicado').sort((a,b)=>(b.date||'')<(a.date||'')?-1:1).slice(0,8),'ok']];
+ return planCard()+chFilter()+grp.map(([n,l,c])=>`<div class="sec"><h3>${n}</h3>${pill(l.length,c)}</div>${l.length?`<ul class="list">${l.sort((a,b)=>(a.date||'z')<(b.date||'z')?-1:1).map(p=>`<li class="${p.status!=='Publicado'?'hc':''}"><button class="item" data-act="pedit" data-id="${p.id}" style="--c:${edColor(p.ed)}"><i class="dot"></i><span class="t">${esc(p.title)}<small>${esc(p.channel)} · ${esc(p.fmt||'')} · ${fd(p.date)}${p.owner?' · '+esc(p.owner):''}</small></span>${pill(p.status,p.status==='Publicado'?'ok':p.status==='Falhou'?'late':'')}</button>${p.status!=='Publicado'?chkBtn('post',p.id,CHKT.post):''}</li>`).join('')}</ul>`:'<div class="empty">Nada aqui.</div>'}`).join('')}
 /* ----- relatórios ----- */
 function vResIG(){
  const r=ig(),P=r.posts||[],M=r.monthly||[];
@@ -913,6 +918,13 @@ document.addEventListener('click',async e=>{
  else if(a==='qtask')taskForm({area:'geral',owner:b.dataset.o,due:b.dataset.d},null);
  else if(a==='fopen')feedSheet(k);
  else if(a==='dlgx'){$('#dlg').hidden=true;$('#dlgbox').innerHTML='';render()}
+ else if(a==='achk'){const kk=b.dataset.k;
+  if(kk==='post')await safe(()=>upd('posts',id,{status:'Publicado'}),'Marcado como publicado');
+  else if(kk==='task')await safe(()=>upd('tasks',id,{done:true}),'Tarefa concluída');
+  else if(kk==='pod')await safe(()=>put('podser',id,Object.assign({},byId('podser',id)||{},{status:'Publicado'})),'PodSer marcado como publicado');
+  else if(kk==='prop'){const pp=byId('props',id)||{},f=proposalFlag(pp);if(!f){toast('Nada pendente nessa proposta');return}
+   if(/^Envi/.test(f.t))await safe(()=>upd('props',id,{status:'Enviada',sentAt:TODAY,followUp:addDays(TODAY,7)}),'Marcada como enviada');
+   else await safe(()=>upd('props',id,{retornoOk:f.d}),'Retorno registrado: saiu da lista')}}
  else if(a==='ppub'){await safe(()=>upd('posts',id,{status:'Publicado'}),'Marcado como publicado');$('#dlg').hidden=true;$('#dlgbox').innerHTML=''}
  else if(a==='pmo'){S.pm=k;render()}
  else if(a==='mtedit')monthForm();
