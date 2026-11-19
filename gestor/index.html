@@ -675,11 +675,11 @@ function vCur(){
  const cs=D.courses;if(!S.course||!byId('courses',S.course))S.course=cs[0]&&cs[0].id;
  const c=byId('courses',S.course);
  let right='<div class="empty">Cadastre o primeiro curso para organizar tarefas e prazos.</div>';
- if(c){const ts=D.tasks.filter(t=>t.course===c.id);const done=ts.filter(t=>t.done).length;const fases=[...new Set(ts.map(t=>t.fase||'Geral'))];
+ if(c){const ts=D.tasks.filter(t=>t.course===c.id);const done=ts.filter(t=>t.done).length;const showDone=!!S.showDone;const vis=showDone?ts:ts.filter(t=>!t.done);const isMod=f=>/^Módulo \d+/.test(f);const fnum=f=>+(/^Módulo (\d+)/.exec(f)||[0,0])[1];const fall=[...new Set(vis.map(t=>t.fase||'Geral'))];const fases=[...fall.filter(f=>!isMod(f)),...fall.filter(isMod).sort((a,b)=>fnum(a)-fnum(b))];const nDone=ts.filter(t=>t.done).length;
   right=`<div class="row sp"><div><h3 style="font-size:1.3rem">${esc(c.name)}</h3><span class="small">${esc(c.tipo)} · ${esc(c.status)}${c.date?' · início '+fd(c.date):''}</span></div><div class="row"><button class="btn ghost sm" data-act="cedit" data-id="${c.id}">Editar curso</button><button class="btn sm" style="--ac-d:var(--mus-d)" data-act="ctask">Nova tarefa</button></div></div>
   ${c.desc?`<p class="lede" style="margin:8px 0">${esc(c.desc)}</p>`:''}
-  <p class="small" style="margin:8px 0">${done} de ${ts.length} tarefas concluídas${ts.filter(t=>!t.due&&!t.done).length?` · <strong>${ts.filter(t=>!t.due&&!t.done).length} sem prazo</strong>`:''}</p>
-  ${fases.map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="card" style="padding:4px 14px">${ts.filter(t=>(t.fase||'Geral')===f).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:1)).map(taskRow).join('')}</div>`).join('')||'<div class="empty">Sem tarefas ainda.</div>'}`}
+  <p class="small" style="margin:8px 0">${done} de ${ts.length} tarefas concluídas${ts.filter(t=>!t.due&&!t.done).length?` · <strong>${ts.filter(t=>!t.due&&!t.done).length} sem prazo</strong>`:''}${nDone?` · <button class="btn ghost sm" data-act="cdone">${showDone?'Ocultar':'Mostrar'} concluídas (${nDone})</button>`:''}</p>
+  ${fases.map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="card" style="padding:4px 14px">${vis.filter(t=>(t.fase||'Geral')===f).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:(a.due||'z')>(b.due||'z')?1:0)||String(a.title||'').localeCompare(String(b.title||''),'pt',{numeric:true})).map(taskRow).join('')}</div>`).join('')||`<div class="empty">${ts.length?'Tudo concluído por aqui.':'Sem tarefas ainda.'}</div>`}`}
  return head('Online e presencial','Cursos','Cada curso com suas fases, tarefas, responsáveis e prazos.')+
  `<div class="row sp" style="margin-bottom:14px"><div class="sub" style="margin:0">${cs.map(x=>`<button aria-pressed="${x.id===S.course}" data-act="csel" data-id="${x.id}">${esc(x.name)}</button>`).join('')}</div><button class="btn ghost sm" data-act="cnew">Novo curso</button></div>`+right}
 function courseForm(c){openForm({title:c?'Editar curso':'Novo curso',req:'name',vals:c||{tipo:'Online',status:'Em construção'},
@@ -891,6 +891,7 @@ document.addEventListener('click',async e=>{
  else if(a==='draftmsg')draftMsg(id);
  else if(a==='copy'){try{await navigator.clipboard.writeText(b.dataset.t);toast('Copiado')}catch(x){toast('Selecione o texto e copie')}}
  else if(a==='csel'){S.course=id;render()}
+ else if(a==='cdone'){S.showDone=!S.showDone;render()}
  else if(a==='cnew')courseForm(null);
  else if(a==='cedit')courseForm(byId('courses',id));
  else if(a==='ctask')taskForm({area:'cur',course:S.course,fase:''},null);
