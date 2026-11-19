@@ -240,6 +240,16 @@ td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .lb code{font:11px ui-monospace,monospace;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mchips .mch{cursor:pointer}
 /* gaveta de materiais de apoio (Cursos) */
+.cblocks{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0 6px;align-items:stretch}
+.cb{border:1.5px solid var(--line);border-radius:8px;padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.cb-sk{background:var(--teal);border-color:var(--teal);color:#fff}
+.cb-sk h4{margin:0;font-size:1.05rem;line-height:1.25;color:#fff}.cb-sk .small{color:rgba(255,255,255,.85)}
+.cb-sk .btn{background:#fff;color:var(--teal-d);border-color:#fff}.cb-sk .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.7)}
+.cbl{margin:0;font-size:11px;font-weight:700;letter-spacing:.08em;opacity:.9}
+.cbf{margin:6px 0 2px;font-size:12px;font-weight:700}
+hr.dots{border:0;border-top:2px dotted var(--ink-m,#9a9a9a);margin:20px 0 14px}
+.ltit{font-size:1.1rem;letter-spacing:.06em;margin:0}
+@media (max-width:700px){.cblocks{grid-template-columns:1fr}}
 .cur2{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:22px;align-items:start}
 .cur2.nog{grid-template-columns:minmax(0,1fr)}
 .cur2.nog .gdr{display:none}
@@ -724,7 +734,7 @@ function mdr(t){
 const GGR=['Canalizações (ponto de partida)','Outros materiais'];
 const GCOL={'Yara':'--mus','Robertha':'--terra','Chrys':'--mag'};
 function gavetaHtml(c){
- const its=D.gaveta.filter(x=>x.course===c.id).sort((a,b)=>(a.ord||99)-(b.ord||99)||(a.ts||0)-(b.ts||0));
+ const its=D.gaveta.filter(x=>x.course===c.id&&x.id!=='g_grade_curso').sort((a,b)=>(a.ord||99)-(b.ord||99)||(a.ts||0)-(b.ts||0));
  const item=x=>{const open=!!S.gopen[x.id],col=GCOL[x.autora]||'--teal';
   const meta=[x.autora,x.date].filter(Boolean).map(esc).join(' · ');
   if(x.tipo==='Link')return `<div class="gi" style="--c:var(${col})"><div class="gt" style="cursor:default"><span><strong>${esc(x.title)}</strong><small>${meta}${x.note?(meta?' · ':'')+esc(x.note):''}</small></span></div><div class="gx" style="padding-top:10px"><div class="row"><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Abrir em nova página ↗</a><button class="btn ghost sm" data-act="gvedit" data-id="${x.id}">Editar</button></div></div></div>`;
@@ -748,11 +758,14 @@ function vCur(){
  const cs=D.courses;if(!S.course||!byId('courses',S.course))S.course=cs[0]&&cs[0].id;
  const c=byId('courses',S.course);
  let right='<div class="empty">Cadastre o primeiro curso para organizar tarefas e prazos.</div>';
- if(c){const ts=D.tasks.filter(t=>t.course===c.id);const done=ts.filter(t=>t.done).length;const showDone=!!S.showDone;const vis=showDone?ts:ts.filter(t=>!t.done);const isMod=f=>/^Módulo \d+/.test(f);const fnum=f=>+(/^Módulo (\d+)/.exec(f)||[0,0])[1];const fall=[...new Set(vis.map(t=>t.fase||'Geral'))];const fases=[...fall.filter(f=>!isMod(f)),...fall.filter(isMod).sort((a,b)=>fnum(a)-fnum(b))];const nDone=ts.filter(t=>t.done).length;
+ if(c){const ts=D.tasks.filter(t=>t.course===c.id);const done=ts.filter(t=>t.done).length;const showDone=!!S.showDone;const vis=showDone?ts:ts.filter(t=>!t.done);const isMod=f=>/^Módulo \d+/.test(f);const fnum=f=>+(/^Módulo (\d+)/.exec(f)||[0,0])[1];const fall=[...new Set(vis.map(t=>t.fase||'Geral'))];const fases=[...fall.filter(f=>!isMod(f)),...fall.filter(isMod).sort((a,b)=>fnum(a)-fnum(b))];const nDone=ts.filter(t=>t.done).length;const grade=D.gaveta.find(x=>x.id==='g_grade_curso'&&x.course===c.id&&x.url);const rowsOf=f=>vis.filter(t=>(t.fase||'Geral')===f).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:(a.due||'z')>(b.due||'z')?1:0)||String(a.title||'').localeCompare(String(b.title||''),'pt',{numeric:true})).map(taskRow).join('');
   right=`<div class="row sp"><div><h3 style="font-size:1.3rem">${esc(c.name)}</h3><span class="small">${esc(c.tipo)} · ${esc(c.status)}${c.date?' · início '+fd(c.date):''}</span></div><div class="row"><button class="btn ghost sm" data-act="cedit" data-id="${c.id}">Editar curso</button><button class="btn sm" style="--ac-d:var(--mus-d)" data-act="ctask">Nova tarefa</button></div></div>
   ${c.desc?`<p class="lede" style="margin:8px 0">${esc(c.desc)}</p>`:''}
+  <div class="cblocks"><section class="cb cb-sk"><p class="cbl">ESQUELETO DO CURSO</p>${grade?`<h4>${esc(grade.title)}</h4><p class="small">${[grade.autora,grade.date].filter(Boolean).map(esc).join(' · ')}${grade.note?' · '+esc(grade.note):''}</p><div class="row" style="margin-top:auto"><a class="btn sm" href="${esc(grade.url)}" target="_blank" rel="noopener">ABRIR ↗</a><button class="btn ghost sm" data-act="gvedit" data-id="${grade.id}">Editar</button></div>`:'<div class="empty">Sem documento do esqueleto ainda.</div>'}</section>
+  <section class="cb"><p class="cbl">MONTAGEM DO CURSO</p>${fases.filter(f=>!isMod(f)).map(f=>`<p class="cbf">${esc(f)}</p><div class="card" style="padding:2px 12px">${rowsOf(f)}</div>`).join('')||'<div class="empty">Nada pendente na montagem.</div>'}</section></div>
+  <hr class="dots"><h3 class="ltit">LISTA DE TAREFAS</h3>
   <p class="small" style="margin:8px 0">${done} de ${ts.length} tarefas concluídas${ts.filter(t=>!t.due&&!t.done).length?` · <strong>${ts.filter(t=>!t.due&&!t.done).length} sem prazo</strong>`:''}${nDone?` · <button class="btn ghost sm" data-act="cdone">${showDone?'Ocultar':'Mostrar'} concluídas (${nDone})</button>`:''}</p>
-  ${fases.map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="card" style="padding:4px 14px">${vis.filter(t=>(t.fase||'Geral')===f).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:(a.due||'z')>(b.due||'z')?1:0)||String(a.title||'').localeCompare(String(b.title||''),'pt',{numeric:true})).map(taskRow).join('')}</div>`).join('')||`<div class="empty">${ts.length?'Tudo concluído por aqui.':'Sem tarefas ainda.'}</div>`}`}
+  ${fases.filter(isMod).map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="card" style="padding:4px 14px">${rowsOf(f)}</div>`).join('')||`<div class="empty">${ts.length?'Tudo concluído por aqui.':'Sem tarefas ainda.'}</div>`}`}
  return head('Online e presencial','Cursos','Cada curso com suas fases, tarefas, responsáveis e prazos.')+
  `<div class="row sp" style="margin-bottom:14px"><div class="sub" style="margin:0">${cs.map(x=>`<button aria-pressed="${x.id===S.course}" data-act="csel" data-id="${x.id}">${esc(x.name)}</button>`).join('')}</div><button class="btn ghost sm" data-act="cnew">Novo curso</button></div>`+(c?`<div class="cur2" id="cur2"><div>${right}</div>${gavetaHtml(c)}</div>`:right)}
 function courseForm(c){openForm({title:c?'Editar curso':'Novo curso',req:'name',vals:c||{tipo:'Online',status:'Em construção'},
