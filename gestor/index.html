@@ -243,21 +243,21 @@ td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .cur2{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:22px;align-items:start}
 .cur2.nog{grid-template-columns:minmax(0,1fr)}
 .cur2.nog .gdr{display:none}
-.gdr{position:sticky;top:12px;max-height:calc(100vh - 24px);background:var(--surface2);border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.gdr{position:sticky;top:62px;max-height:calc(100vh - 76px);background:var(--surface2);border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
 .gdr .gh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
 .gdr .gh h3{margin:0;font:400 1.1rem var(--f-h)}
 .gdr .gb{overflow:auto;padding:10px 14px 30px;flex:1}
 @media (max-width:1050px){.cur2{grid-template-columns:minmax(0,1fr)}.gdr{position:static;max-height:none}}
 .gdr .gs{margin:18px 0 8px;font:400 .78rem var(--f-h);letter-spacing:.08em;text-transform:uppercase;color:var(--teal-d)}
 .gi{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--teal));border-radius:8px;margin:0 0 8px}
-.gi>.gt{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;width:100%;text-align:left;background:none;border:0;padding:11px 12px;cursor:pointer;font:inherit;color:inherit}
-.gi .gt strong{font:400 14.5px/1.3 var(--f-h);display:block}.gi .gt small{color:var(--ink2);font-size:12px}
-.gi .gx{padding:0 12px 12px;border-top:1px solid var(--line)}
+.gi>.gt{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;width:100%;text-align:left;background:none;border:0;padding:8px 10px;cursor:pointer;font:inherit;color:inherit}
+.gi .gt strong{font:400 13px/1.3 var(--f-h);display:block}.gi .gt small{color:var(--ink2);font-size:11px}
+.gi .gx{padding:0 10px 10px;border-top:1px solid var(--line)}
 .gi .gx[hidden]{display:none!important}
-.gi .gtx{font-size:14px;line-height:1.55;max-height:60vh;overflow:auto;padding-top:10px}
-.gi .gtx p{margin:0 0 .7em}.gi .gtx h4{margin:1em 0 .4em;font:400 1rem var(--f-h);color:var(--teal-d)}.gi .gtx h5{margin:.9em 0 .3em;font:400 .92rem var(--f-h)}
+.gi .gtx{font-size:12.5px;line-height:1.45;max-height:34vh;overflow:auto;padding-top:8px}
+.gi .gtx p{margin:0 0 .55em}.gi .gtx h4{margin:1em 0 .4em;font:400 1rem var(--f-h);color:var(--teal-d)}.gi .gtx h5{margin:.9em 0 .3em;font:400 .92rem var(--f-h)}
 .gi .gtx ul{margin:0 0 .7em;padding-left:1.2em}.gi .gtx blockquote{margin:0 0 .7em;padding:2px 0 2px 10px;border-left:3px solid var(--teal);color:var(--ink2);font-style:italic}
-.gi .gtx table{border-collapse:collapse;width:100%;font-size:13px;margin:.4em 0 .9em}.gi .gtx th,.gi .gtx td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}.gi .gtx th{background:var(--teal-s)}
+.gi .gtx table{border-collapse:collapse;width:100%;font-size:12px;margin:.4em 0 .9em}.gi .gtx th,.gi .gtx td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top}.gi .gtx th{background:var(--teal-s)}
 .gi .gtx .ln{white-space:pre-wrap}
 </style>
 
@@ -717,7 +717,7 @@ function gavetaHtml(c){
  const item=x=>{const open=!!S.gopen[x.id],col=GCOL[x.autora]||'--teal';
   const meta=[x.autora,x.date].filter(Boolean).map(esc).join(' · ');
   if(x.tipo==='Link')return `<div class="gi" style="--c:var(${col})"><div class="gt" style="cursor:default"><span><strong>${esc(x.title)}</strong><small>${meta}${x.note?(meta?' · ':'')+esc(x.note):''}</small></span></div><div class="gx" style="padding-top:10px"><div class="row"><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Abrir em nova página ↗</a><button class="btn ghost sm" data-act="gedit" data-id="${x.id}">Editar</button></div></div></div>`;
-  return `<div class="gi" style="--c:var(${col})"><button class="gt" data-act="gopen" data-id="${x.id}" aria-expanded="${open}"><span><strong>${esc(x.title)}</strong><small>${meta}${x.note?(meta?' · ':'')+esc(x.note):''}</small></span><span aria-hidden="true">${open?'▴':'▾'}</span></button><div class="gx" ${open?'':'hidden'}><div class="row" style="margin-top:8px"><button class="btn ghost sm" data-act="gedit" data-id="${x.id}">Editar texto</button><button class="btn ghost sm" data-act="gcopy" data-id="${x.id}">Copiar</button></div><div class="gtx">${mdr(x.body)}</div></div></div>`};
+  return `<div class="gi" style="--c:var(${col})"><button class="gt" data-act="gopen" data-id="${x.id}" aria-expanded="${open}"><span><strong>${esc(x.title)}</strong><small>${meta}${x.note?(meta?' · ':'')+esc(x.note):''}</small></span><span aria-hidden="true">${open?'▴':'▾'}</span></button><div class="gx" ${open?'':'hidden'}><div class="row" style="margin-top:8px"><button class="btn ghost sm" data-act="gedit" data-id="${x.id}">Editar texto</button><button class="btn ghost sm" data-act="gcopy" data-id="${x.id}">Copiar</button><button class="btn sm" data-act="gclose" data-id="${x.id}">Fechar</button></div><div class="gtx">${mdr(x.body)}</div></div></div>`};
  const sec=GGR.map(g=>{const l=its.filter(x=>(x.grp||GGR[1])===g);return l.length?`<div class="gs">${g}</div>${l.map(item).join('')}`:''}).join('');
  return `<aside class="gdr" id="gdr" aria-label="Gaveta de materiais de apoio"><div class="gh"><h3>Gaveta do curso · ${its.length}</h3><div class="row"><button class="btn sm" data-act="gnew">+ Novo</button><button class="btn ghost sm" data-act="gtog">Recolher</button></div></div><div class="gb"><p class="small" style="margin:0">Materiais de apoio para produzir o curso, sempre à mão. Toque num texto para abrir; qualquer uma das três pode editar ou acrescentar.</p>${sec||'<div class="empty">Nada na gaveta ainda.</div>'}</div></aside>`}
 function gForm(it){openForm({title:it?'Editar material':'Novo material da gaveta',req:'title',vals:it||{tipo:'Texto',grp:GGR[1]},
@@ -950,6 +950,7 @@ document.addEventListener('click',async e=>{
  else if(a==='cdone'){S.showDone=!S.showDone;render()}
  else if(a==='gtog'){S.gav=!S.gav;render()}
  else if(a==='gopen'){S.gopen[id]=!S.gopen[id];const x=b.parentElement.querySelector('.gx');if(x)x.hidden=!S.gopen[id];b.setAttribute('aria-expanded',!!S.gopen[id]);const ar=b.querySelector('span[aria-hidden]');if(ar)ar.textContent=S.gopen[id]?'▴':'▾'}
+ else if(a==='gclose'){S.gopen[id]=false;const x=b.closest('.gx');if(x){x.hidden=true;const t=x.parentElement.querySelector('.gt');if(t){t.setAttribute('aria-expanded','false');const ar=t.querySelector('span[aria-hidden]');if(ar)ar.textContent='▾';t.scrollIntoView({block:'nearest'})}}}
  else if(a==='gnew')gForm(null)
  else if(a==='gedit')gForm(byId('gaveta',id))
  else if(a==='gcopy'){const g=byId('gaveta',id);try{await navigator.clipboard.writeText(g.body||'');toast('Texto copiado')}catch(x){toast('Não foi possível copiar')}}
