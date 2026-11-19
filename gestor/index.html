@@ -564,7 +564,7 @@ const cap1=s=>s.charAt(0).toUpperCase()+s.slice(1);
 function ytCard(v){
  const ep=+v.ep||0,e=ep?D.episodes.find(x=>+x.n===ep):null;
  const title=ep?((e&&e.titulo&&!/a confirmar|a definir/i.test(e.titulo))?e.titulo:'PodSer #'+ep):(v.t||'Vídeo do canal');
- const th=ep&&EPTH.has(ep)?`th/ep${p2(ep)}.jpg`:'';
+ const th=ep&&EPTH.has(ep)?`th/ep${p2(ep)}.jpg`:`https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
  const url='https://www.youtube.com/watch?v='+v.id;
  return `<li class="yc"><a class="yth" href="${esc(url)}" target="_blank" rel="noopener" aria-label="${esc(title)} no YouTube">${th?`<img src="${th}" alt="" loading="lazy">`:`<span class="ynoc">${ep?'PodSer #'+ep:'Vídeo'}</span>`}<b class="yb">${ep?'EP — '+p2(ep):'VÍDEO'}</b></a><p class="yt2">${esc(title)}</p><div class="yl"><a href="${esc(url)}" target="_blank" rel="noopener">Assistir no YouTube ↗</a><small>${fd(v.d)} · ${nf(v.v)} visualizações</small></div></li>`}
 function nextEp(){return D.episodes.filter(e=>e.status!=='Publicado').sort((a,b)=>a.n-b.n)[0]||null}
