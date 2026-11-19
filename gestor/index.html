@@ -240,13 +240,14 @@ td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .lb code{font:11px ui-monospace,monospace;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mchips .mch{cursor:pointer}
 /* gaveta de materiais de apoio (Cursos) */
-.gtab{position:fixed;right:0;top:46%;z-index:60;writing-mode:vertical-rl;transform:rotate(180deg);background:var(--teal-d);color:var(--on-d);border:0;border-radius:0 10px 10px 0;padding:14px 9px;font:400 13px var(--f-h);letter-spacing:.04em;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18)}
-.gtab:hover{background:var(--teal)}
-.gdr{position:fixed;top:0;right:0;bottom:0;width:min(560px,94vw);z-index:70;background:var(--bg);border-left:3px solid var(--teal);box-shadow:-10px 0 30px rgba(0,0,0,.18);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease}
-.gdr.on{transform:none}
-.gdr .gh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
-.gdr .gh h3{margin:0;font:400 1.15rem var(--f-h)}
-.gdr .gb{overflow:auto;padding:12px 16px 40px;flex:1}
+.cur2{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:22px;align-items:start}
+.cur2.nog{grid-template-columns:minmax(0,1fr)}
+.cur2.nog .gdr{display:none}
+.gdr{position:sticky;top:12px;max-height:calc(100vh - 24px);background:var(--surface2);border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:10px;display:flex;flex-direction:column;overflow:hidden}
+.gdr .gh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--surface)}
+.gdr .gh h3{margin:0;font:400 1.1rem var(--f-h)}
+.gdr .gb{overflow:auto;padding:10px 14px 30px;flex:1}
+@media (max-width:1050px){.cur2{grid-template-columns:minmax(0,1fr)}.gdr{position:static;max-height:none}}
 .gdr .gs{margin:18px 0 8px;font:400 .78rem var(--f-h);letter-spacing:.08em;text-transform:uppercase;color:var(--teal-d)}
 .gi{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--teal));border-radius:8px;margin:0 0 8px}
 .gi>.gt{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;width:100%;text-align:left;background:none;border:0;padding:11px 12px;cursor:pointer;font:inherit;color:inherit}
@@ -303,7 +304,7 @@ const ld=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 
 const D={posts:[],props:[],tasks:[],courses:[],lib:[],photos:[],meets:[],podser:[],cfg:[],metrics:[],reports:[],episodes:[],themes:[],months:[],analysis:[],gaveta:[]};
-const S={tab:(location.hash||'').slice(1)||'hoje',me:ld('as_me')||'',sub:{com:'pan',emp:'all'},ytm:1,mo:0,course:null,album:'Todos',libc:'Todas',libq:'',chf:'Todos',dbOk:null,meet:null,hv:'sem',hw:0,hm:0,hp:'Todas',pm:TODAY.slice(0,7),gav:false,gopen:{}};
+const S={tab:(location.hash||'').slice(1)||'hoje',me:ld('as_me')||'',sub:{com:'pan',emp:'all'},ytm:1,mo:0,course:null,album:'Todos',libc:'Todas',libq:'',chf:'Todos',dbOk:null,meet:null,hv:'sem',hw:0,hm:0,hp:'Todas',pm:TODAY.slice(0,7),gav:true,gopen:{}};
 let DB=null,ASSETS=null,SAMPLE=null,DL=null;
 const byId=(c,id)=>D[c].find(x=>x.id===id);
 const cfg=id=>(byId('cfg',id)||{});
@@ -718,8 +719,7 @@ function gavetaHtml(c){
   if(x.tipo==='Link')return `<div class="gi" style="--c:var(${col})"><div class="gt" style="cursor:default"><span><strong>${esc(x.title)}</strong><small>${meta}${x.note?(meta?' · ':'')+esc(x.note):''}</small></span></div><div class="gx" style="padding-top:10px"><div class="row"><a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Abrir em nova página ↗</a><button class="btn ghost sm" data-act="gedit" data-id="${x.id}">Editar</button></div></div></div>`;
   return `<div class="gi" style="--c:var(${col})"><button class="gt" data-act="gopen" data-id="${x.id}" aria-expanded="${open}"><span><strong>${esc(x.title)}</strong><small>${meta}${x.note?(meta?' · ':'')+esc(x.note):''}</small></span><span aria-hidden="true">${open?'▴':'▾'}</span></button><div class="gx" ${open?'':'hidden'}><div class="row" style="margin-top:8px"><button class="btn ghost sm" data-act="gedit" data-id="${x.id}">Editar texto</button><button class="btn ghost sm" data-act="gcopy" data-id="${x.id}">Copiar</button></div><div class="gtx">${mdr(x.body)}</div></div></div>`};
  const sec=GGR.map(g=>{const l=its.filter(x=>(x.grp||GGR[1])===g);return l.length?`<div class="gs">${g}</div>${l.map(item).join('')}`:''}).join('');
- return `<button class="gtab" data-act="gtog" aria-label="Abrir a gaveta de materiais de apoio">Materiais de apoio · ${its.length}</button>
- <aside class="gdr ${S.gav?'on':''}" id="gdr" aria-label="Gaveta de materiais de apoio"><div class="gh"><h3>Gaveta do curso</h3><div class="row"><button class="btn sm" data-act="gnew">+ Novo material</button><button class="btn ghost sm" data-act="gtog">Fechar</button></div></div><div class="gb"><p class="small" style="margin:0">Materiais de apoio para produzir o curso, sempre à mão. Toque num texto para abrir; qualquer uma das três pode editar ou acrescentar.</p>${sec||'<div class="empty">Nada na gaveta ainda.</div>'}</div></aside>`}
+ return `<aside class="gdr" id="gdr" aria-label="Gaveta de materiais de apoio"><div class="gh"><h3>Gaveta do curso · ${its.length}</h3><div class="row"><button class="btn sm" data-act="gnew">+ Novo</button><button class="btn ghost sm" data-act="gtog">Recolher</button></div></div><div class="gb"><p class="small" style="margin:0">Materiais de apoio para produzir o curso, sempre à mão. Toque num texto para abrir; qualquer uma das três pode editar ou acrescentar.</p>${sec||'<div class="empty">Nada na gaveta ainda.</div>'}</div></aside>`}
 function gForm(it){openForm({title:it?'Editar material':'Novo material da gaveta',req:'title',vals:it||{tipo:'Texto',grp:GGR[1]},
  note:'Para um documento que já existe (Doc, Drive, Canva…), escolha <b>Link</b> e cole o endereço. Para um texto, escolha <b>Texto</b> e cole o conteúdo; use ## para títulos, - para listas e | para tabelas.',
  fields:[{k:'title',l:'Nome do material',full:1},{k:'tipo',l:'Tipo',t:'select',opts:['Texto','Link']},{k:'grp',l:'Onde fica',t:'select',opts:GGR},{k:'autora',l:'De quem',t:'select',opts:['',...OWN]},{k:'date',l:'Data (ex.: 17/11/2026)'},{k:'url',l:'Link (se for Link)',full:1,ph:'https://'},{k:'note',l:'Para que serve (curto)',full:1},{k:'body',l:'Texto (se for Texto)',t:'area',full:1}],
@@ -737,7 +737,7 @@ function vCur(){
   <p class="small" style="margin:8px 0">${done} de ${ts.length} tarefas concluídas${ts.filter(t=>!t.due&&!t.done).length?` · <strong>${ts.filter(t=>!t.due&&!t.done).length} sem prazo</strong>`:''}${nDone?` · <button class="btn ghost sm" data-act="cdone">${showDone?'Ocultar':'Mostrar'} concluídas (${nDone})</button>`:''}</p>
   ${fases.map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="card" style="padding:4px 14px">${vis.filter(t=>(t.fase||'Geral')===f).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:(a.due||'z')>(b.due||'z')?1:0)||String(a.title||'').localeCompare(String(b.title||''),'pt',{numeric:true})).map(taskRow).join('')}</div>`).join('')||`<div class="empty">${ts.length?'Tudo concluído por aqui.':'Sem tarefas ainda.'}</div>`}`}
  return head('Online e presencial','Cursos','Cada curso com suas fases, tarefas, responsáveis e prazos.')+
- `<div class="row sp" style="margin-bottom:14px"><div class="sub" style="margin:0">${cs.map(x=>`<button aria-pressed="${x.id===S.course}" data-act="csel" data-id="${x.id}">${esc(x.name)}</button>`).join('')}</div><button class="btn ghost sm" data-act="cnew">Novo curso</button></div>`+right+(c?gavetaHtml(c):'')}
+ `<div class="row sp" style="margin-bottom:14px"><div class="sub" style="margin:0">${cs.map(x=>`<button aria-pressed="${x.id===S.course}" data-act="csel" data-id="${x.id}">${esc(x.name)}</button>`).join('')}</div><button class="btn ghost sm" data-act="cnew">Novo curso</button></div>`+(c?`<div class="cur2 ${S.gav?'':'nog'}" id="cur2"><div>${S.gav?'':'<p style="margin:0 0 10px"><button class="btn ghost sm" data-act="gtog">Mostrar a gaveta de materiais</button></p>'}${right}</div>${gavetaHtml(c)}</div>`:right)}
 function courseForm(c){openForm({title:c?'Editar curso':'Novo curso',req:'name',vals:c||{tipo:'Online',status:'Em construção'},
  fields:[{k:'name',l:'Nome',full:1},{k:'tipo',l:'Formato',t:'select',opts:['Online','Presencial','Híbrido']},{k:'status',l:'Situação',t:'select',opts:['Ideia','Em construção','Pronto para lançar','No ar','Encerrado']},{k:'date',l:'Data de início ou lançamento',t:'date'},{k:'desc',l:'Descrição',t:'area',full:1}],
  onSave:async r=>{if(c)return upd('courses',c.id,r);const d=await add('courses',r);S.course=d.id},onDel:c?()=>del('courses',c.id):null})}
@@ -948,7 +948,7 @@ document.addEventListener('click',async e=>{
  else if(a==='copy'){try{await navigator.clipboard.writeText(b.dataset.t);toast('Copiado')}catch(x){toast('Selecione o texto e copie')}}
  else if(a==='csel'){S.course=id;render()}
  else if(a==='cdone'){S.showDone=!S.showDone;render()}
- else if(a==='gtog'){S.gav=!S.gav;const d=$('#gdr');if(d)d.classList.toggle('on',S.gav)}
+ else if(a==='gtog'){S.gav=!S.gav;render()}
  else if(a==='gopen'){S.gopen[id]=!S.gopen[id];const x=b.parentElement.querySelector('.gx');if(x)x.hidden=!S.gopen[id];b.setAttribute('aria-expanded',!!S.gopen[id]);const ar=b.querySelector('span[aria-hidden]');if(ar)ar.textContent=S.gopen[id]?'▴':'▾'}
  else if(a==='gnew')gForm(null)
  else if(a==='gedit')gForm(byId('gaveta',id))
