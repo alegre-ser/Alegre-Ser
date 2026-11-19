@@ -316,6 +316,7 @@ const add=(c,o)=>DB?DB.collection(c).add(Object.assign({by:S.me||'',ts:Date.now(
 const put=(c,id,o)=>DB.doc(c+'/'+id).set(o);
 const upd=(c,id,o)=>DB.doc(c+'/'+id).update(o);
 const del=(c,id)=>DB.doc(c+'/'+id).delete();
+function toastUndo(t,fn){const e=document.createElement('div');e.className='toast';e.style.cssText='display:flex;gap:12px;align-items:center';e.innerHTML='<span></span><button class="btn sm" style="padding:3px 10px">Desfazer</button>';e.firstChild.textContent=t;e.querySelector('button').onclick=()=>{e.remove();fn()};document.body.appendChild(e);setTimeout(()=>e.remove(),9000)}
 function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2600)}
 async function safe(fn,ok){try{await fn();if(ok)toast(ok)}catch(e){toast('Não foi possível salvar. Confira se você está logada e pode editar.')}}
 
@@ -339,6 +340,7 @@ function weekPosts(){return D.posts.filter(p=>p.date&&diff(p.date,TODAY)>=0&&dif
 
 /* ---------- formulário em janela ---------- */
 function openForm(o){
+ if(S.me!=='Yara')o.onDel=null;
  const f=o.fields.map(x=>{const v=(o.vals||{})[x.k]??x.def??'';const id='f_'+x.k;let c;
   if(x.t==='select')c=`<select id="${id}">${x.opts.map(y=>`<option ${String(y)===String(v)?'selected':''}>${esc(y)}</option>`).join('')}</select>`;
   else if(x.t==='area')c=`<textarea id="${id}">${esc(v)}</textarea>`;
@@ -1002,7 +1004,7 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('change',async e=>{
  const t=e.target;
- if(t.dataset.act==='tdone'){await safe(()=>upd('tasks',t.dataset.id,{done:t.checked,doneAt:t.checked?TODAY:''}));const tk=byId('tasks',t.dataset.id);if(tk&&tk.meet){const md=byId('meets',tk.meet)||{},ls=String(md.pauta||'').split('\n').map(x=>x.trim()).filter(Boolean),i=ls.indexOf(tk.title);if(i>=0)await safe(()=>put('meets',tk.meet,Object.assign({},md,{pc:Object.assign({},md.pc||{},{[i]:t.checked})})))}}
+ if(t.dataset.act==='tdone'){const tid=t.dataset.id,wasOn=t.checked;await safe(()=>upd('tasks',tid,{done:t.checked,doneAt:t.checked?TODAY:''}));if(wasOn&&S.tab==='cur'&&!S.showDone)toastUndo('Concluída. Ela saiu da lista; veja em “Mostrar concluídas”.',()=>safe(()=>upd('tasks',tid,{done:false,doneAt:''}),'Voltou para a lista'));const tk=byId('tasks',t.dataset.id);if(tk&&tk.meet){const md=byId('meets',tk.meet)||{},ls=String(md.pauta||'').split('\n').map(x=>x.trim()).filter(Boolean),i=ls.indexOf(tk.title);if(i>=0)await safe(()=>put('meets',tk.meet,Object.assign({},md,{pc:Object.assign({},md.pc||{},{[i]:t.checked})})))}}
  else if(t.dataset.act==='pchk'){const k=t.dataset.k,cur=(byId('meets',k)||{}).pc||{};await safe(()=>put('meets',k,Object.assign({},byId('meets',k)||{},{pc:Object.assign({},cur,{[t.dataset.i]:t.checked})})));{const ln=String((byId('meets',k)||{}).pauta||'').split('\n').map(x=>x.trim()).filter(Boolean)[+t.dataset.i];for(const x of D.tasks.filter(x=>x.meet===k&&x.title===ln&&!!x.done!==t.checked))await safe(()=>upd('tasks',x.id,{done:t.checked,doneAt:t.checked?TODAY:''}))}meetSheet(k)}
  else if(t.dataset.act==='mchk'){const k=t.dataset.k,cur=(byId('meets',k)||{}).checks||{};await safe(()=>put('meets',k,Object.assign({},byId('meets',k)||{},{checks:Object.assign({},cur,{[t.dataset.i]:t.checked})})));meetSheet(k)}
  else if(t.id==='fotup'||t.id==='libup'){
@@ -1031,7 +1033,7 @@ render();
  if(!window.supabase){S.dbOk=false;show(true);say('Não foi possível carregar o sistema de login. Verifique sua conexão e recarregue a página.');return}
  const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  const cache={},subs={};let me=null,started=false;
- const arr=n=>Object.keys(cache[n]||{}).map(id=>({id,data:()=>cache[n][id]}));
+ const arr=n=>Object.keys(cache[n]||{}).filter(id=>!(cache[n][id]||{})._del).map(id=>({id,data:()=>cache[n][id]}));
  const notify=n=>(subs[n]||[]).forEach(f=>{try{f({docs:arr(n)})}catch(e){}});
  const err=e=>{console.warn(e);(Object.keys(subs)).forEach(n=>(subs[n]||[]).forEach(f=>f.err&&f.err(e)))};
  async function pull(){
@@ -1055,7 +1057,7 @@ render();
   doc(p){const i=p.indexOf('/'),n=p.slice(0,i),id=p.slice(i+1);return{
    async set(o){await save(n,id,JSON.parse(JSON.stringify(o)))},
    async update(o){await save(n,id,Object.assign({},cache[n][id]||{},JSON.parse(JSON.stringify(o))))},
-   async delete(){const prev=cache[n][id];delete cache[n][id];notify(n);const {error}=await sb.from('gestor_docs').delete().eq('colecao',n).eq('id',id);if(error){if(prev!==undefined)cache[n][id]=prev;notify(n);throw error}}
+   async delete(){const prev=cache[n][id];if(prev===undefined)return;const nv=Object.assign({},prev,{_del:true,_delBy:me&&me.nome||'',_delAt:new Date().toISOString()});await save(n,id,nv)}
   }}
  };
  Object.keys(D).forEach(n=>{subs[n]=subs[n]||[];cache[n]=cache[n]||{};watch(n)});
