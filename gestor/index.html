@@ -520,8 +520,9 @@ function cd(m){const ms=m.getTime()-Date.now();if(ms<0)return 'Reunião em andam
 
 /* ---------- Comunicação ---------- */
 function postForm(p,preDate){
- openForm({title:p?'Editar post':'Novo post',req:'title',vals:p||{date:preDate||'',channel:'Instagram',fmt:'Post',status:'Ideia',ed:EDI[0][0]},
-  fields:[{k:'title',l:'Título ou tema',full:1},{k:'date',l:'Data de publicação',t:'date'},{k:'channel',l:'Canal',t:'select',opts:CH},{k:'fmt',l:'Formato',t:'select',opts:FMT},{k:'ed',l:'Editoria (define a cor)',t:'select',opts:EDI.map(e=>e[0])},{k:'status',l:'Situação',t:'select',opts:PST},{k:'owner',l:'Responsável',t:'select',opts:['',...OWN]},{k:'cv',l:'Capa: foto ou cor',t:'select',opts:['','Foto','Cor']},{k:'link',l:'Link (Trello, Canva, arquivo)',full:1},{k:'caption',l:'Legenda ou notas',t:'area',full:1}],
+ const kit=p&&(p.cover||p.caption)?`<span style="display:block;margin:4px 0 10px">${p.cover?`<img src="${esc(p.cover)}" alt="Imagem do post" style="display:block;max-width:220px;max-height:220px;border-radius:6px;margin-bottom:8px">`:''}${p.cover?`<a class="btn sm" href="${esc(p.cover)}" download="${esc((p.title||'post').replace(/[^\w\-]+/g,'_'))}.jpg">Baixar imagem</a> `:''}${p.caption?`<button class="btn ghost sm" type="button" data-act="pcopy" data-id="${p.id}">Copiar texto</button>`:''}</span>`:'';
+ openForm({title:p?'Editar post':'Novo post',req:'title',note:kit||undefined,vals:p||{date:preDate||'',channel:'Instagram',fmt:'Post',status:'Ideia',ed:EDI[0][0]},
+  fields:[{k:'title',l:'Título ou tema',full:1},{k:'date',l:'Data de publicação',t:'date'},{k:'channel',l:'Canal',t:'select',opts:CH},{k:'fmt',l:'Formato',t:'select',opts:FMT},{k:'ed',l:'Editoria (define a cor)',t:'select',opts:EDI.map(e=>e[0])},{k:'status',l:'Situação',t:'select',opts:PST},{k:'owner',l:'Responsável',t:'select',opts:['',...OWN]},{k:'cv',l:'Capa: foto ou cor',t:'select',opts:['','Foto','Cor']},{k:'link',l:'Link (Trello, Canva, arquivo)',full:1},{k:'caption',l:'Legenda ou notas (este é o texto que vai no post)',t:'area',full:1},{k:'obs',l:'Observações internas (não vão no post)',t:'area',full:1}],
   onSave:r=>p?upd('posts',p.id,r):add('posts',r),onDel:p?()=>del('posts',p.id):null})}
 function vCom(){
  return head('Instagram · LinkedIn · YouTube · Spotify · Site','Comunicação','Calendário, o que vai ao ar e os números de cada rede, tudo na mesma página.')+
@@ -974,6 +975,7 @@ document.addEventListener('click',async e=>{
  else if(a==='empnew')propForm(null);
  else if(a==='pedit2')propForm(byId('props',id));
  else if(a==='draftmsg')draftMsg(id);
+ else if(a==='pcopy'){const q=byId('posts',id);try{await navigator.clipboard.writeText(q.caption||'');toast('Texto copiado')}catch(x){toast('Selecione o texto e copie')}}
  else if(a==='copy'){try{await navigator.clipboard.writeText(b.dataset.t);toast('Copiado')}catch(x){toast('Selecione o texto e copie')}}
  else if(a==='csel'){S.course=id;render()}
  else if(a==='cdone'){S.showDone=!S.showDone;render()}
