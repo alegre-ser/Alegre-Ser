@@ -274,6 +274,7 @@ hr.dots{border:0;border-top:2px dotted var(--ink-m,#9a9a9a);margin:20px 0 14px}
 .gview .gvbody p{margin:0 0 .8em}.gview .gvbody .ln{white-space:pre-wrap}.gview .gvbody h4{margin:1.2em 0 .4em;font:400 1.1rem var(--f-h);color:var(--teal-d)}.gview .gvbody h5{margin:1em 0 .3em;font:400 1rem var(--f-h)}
 .gview .gvbody ul{margin:0 0 .8em;padding-left:1.3em}.gview .gvbody li{margin:0 0 .3em}.gview .gvbody blockquote{margin:0 0 .8em;padding:2px 0 2px 12px;border-left:3px solid var(--teal);color:var(--ink2);font-style:italic}
 .gview .gvbody table{border-collapse:collapse;width:100%;font-size:13.5px;margin:.5em 0 1.1em}.gview .gvbody th,.gview .gvbody td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top}.gview .gvbody th{background:var(--teal-s)}
+#dlgbox.wide{width:min(900px,94vw);max-width:94vw}
 #dlgbox:has(.gview){width:min(1000px,94vw);max-width:94vw}
 .gfix{background:var(--mag);color:var(--on-d);border-radius:10px;padding:12px 14px;margin:0 0 12px;display:flex;gap:12px;align-items:center;justify-content:space-between}
 .gfix .gl{font:400 .72rem var(--f-h);letter-spacing:.12em;opacity:.85;margin:0 0 4px}
@@ -377,6 +378,8 @@ function openForm(o){
  $('#d_ok').onclick=async()=>{const r={};o.fields.forEach(x=>{r[x.k]=$('#f_'+x.k).value.trim()});if(o.req&&!r[o.req]){toast('Preencha: '+o.fields.find(x=>x.k===o.req).l);return}
   await safe(()=>o.onSave(r),'Salvo');close()};
  if(o.onDel){let arm=false;$('#d_del').onclick=async e=>{if(!arm){arm=true;e.target.textContent='Confirmar exclusão';e.target.classList.add('danger');return}await safe(()=>o.onDel(),'Excluído');close()}}
+ const fit=t=>{t.style.height='auto';t.style.height=(t.scrollHeight+6)+'px'};dlg.querySelectorAll('textarea').forEach(t=>{fit(t);t.addEventListener('input',()=>fit(t))});
+ $('#dlgbox').classList.toggle('wide',!!dlg.querySelector('textarea#f_caption'));
  const first=dlg.querySelector('input,select,textarea');first&&first.focus()}
 dlgKey();function dlgKey(){document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#dlg').hidden){$('#dlg').hidden=true}})}
 function late_flush(){render()}
@@ -608,7 +611,7 @@ function vLI(){
  <p class="small" style="margin:12px 0 4px"><b>Próximos posts</b></p>
  ${pl.length?`<ul class="list">${pl.map(p=>`<li><button class="item" data-act="pedit" data-id="${p.id}" style="--c:${edColor(p.ed)}"><i class="dot"></i><span class="t">${esc(p.title)}<small>${fd(p.date)}${p.owner?' · '+esc(p.owner):''}</small></span>${pill(p.status,'')}</button></li>`).join('')}</ul>`:'<div class="empty">Nenhum post de LinkedIn no calendário.</div>'}
  <div class="row" style="margin-top:10px"><button class="btn ghost sm" data-act="mnew">Lançar números</button></div></section>`}
-function sheet(h){$('#dlgbox').innerHTML=h;$('#dlg').hidden=false}
+function sheet(h){$('#dlgbox').classList.remove('wide');$('#dlgbox').innerHTML=h;$('#dlg').hidden=false}
 function feedSheet(k){
  const s=k.slice(0,1),ref=k.slice(2),igd=igByDate();
  if(s==='p'){const p=byId('posts',ref);if(!p)return;const x=igd[p.date];
