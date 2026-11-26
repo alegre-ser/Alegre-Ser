@@ -251,6 +251,7 @@ td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 hr.dots{border:0;border-top:2px dotted var(--ink-m,#9a9a9a);margin:20px 0 14px}
 .ltit{font-size:1.1rem;letter-spacing:.06em;margin:0}
 @media (max-width:700px){.cblocks{grid-template-columns:1fr}}
+.mcols{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}.mch{font-size:.72rem;letter-spacing:.08em;font-weight:700;color:var(--teal-d);margin:6px 0 4px}.matbar{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:2px}.matit{background:none;border:0;padding:2px 0;color:var(--teal-d);text-decoration:underline;cursor:pointer;font:inherit;font-size:.85rem;text-align:left}@media (max-width:700px){.mcols{grid-template-columns:1fr}}
 .cur2{display:grid;grid-template-columns:minmax(0,1fr) 410px;gap:22px;align-items:start}
 .cur2.nog{grid-template-columns:minmax(0,1fr)}
 .cur2.nog .gdr{display:none}
@@ -328,7 +329,7 @@ const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 
 const D={posts:[],props:[],tasks:[],courses:[],lib:[],photos:[],meets:[],podser:[],cfg:[],metrics:[],reports:[],episodes:[],themes:[],months:[],analysis:[],gaveta:[]};
 const S={tab:(location.hash||'').slice(1)||'hoje',me:ld('as_me')||'',sub:{com:'pan',emp:'all'},ytm:1,mo:0,course:null,album:'Todos',libc:'Todas',libq:'',chf:'Todos',dbOk:null,meet:null,hv:'sem',hw:0,hm:0,hp:'Todas',pm:TODAY.slice(0,7),gopen:{}};
-let DB=null,ASSETS=null,SAMPLE=null,DL=null;
+let DB=null,MAT=null,ASSETS=null,SAMPLE=null,DL=null;
 const byId=(c,id)=>D[c].find(x=>x.id===id);
 const cfg=id=>(byId('cfg',id)||{});
 const edColor=n=>{const e=EDI.find(x=>x[0]===n);return 'var('+COLS[e?e[1]:'teal']+')'};
@@ -387,9 +388,11 @@ function late_flush(){render()}
 /* ---------- peças de interface ---------- */
 const pill=(t,c)=>`<span class="pill ${c||''}">${esc(t)}</span>`;
 const head=(ey,t,l)=>`<p class="eyebrow">${esc(ey)}</p><h2>${esc(t)}</h2><p class="lede">${l}</p>`;
-function taskRow(t){const late=!t.done&&t.due&&t.due<TODAY;
+function matList(t){return (Array.isArray(t.mat)?t.mat:[])}
+function taskRow(t,mode){const late=!t.done&&t.due&&t.due<TODAY;
+ const mb=mode==='cur'?`<div class="matbar"><label class="btn ghost sm" style="cursor:pointer">↑ Carregar material<input type="file" data-act="matup" data-id="${t.id}" hidden></label><button class="btn ghost sm" data-act="matlink" data-id="${t.id}">+ Colar link</button></div>`:mode==='mat'?`<div class="matbar">${matList(t).map((m,i)=>m.k==='link'?`<a class="matit" href="${esc(m.p)}" target="_blank" rel="noopener">🔗 ${esc(m.n||m.p)}</a>`:`<button class="matit" data-act="matopen" data-p="${esc(m.p)}">📎 ${esc(m.n)}</button>`).join('')}<label class="btn ghost sm" style="cursor:pointer">+ Adicionar<input type="file" data-act="matup" data-id="${t.id}" hidden></label><button class="btn ghost sm" data-act="matlink" data-id="${t.id}">+ Link</button><button class="btn ghost sm" data-act="matundo" data-id="${t.id}">Desfazer</button></div>`:'';
  return `<div class="task ${t.done?'done':''}"><input type="checkbox" data-act="tdone" data-id="${t.id}" ${t.done?'checked':''} aria-label="Concluir ${esc(t.title)}"><button class="tt" data-act="tedit" data-id="${t.id}">${esc(t.title)}${t.note?`<small class="small" style="display:block">${esc(t.note)}</small>`:''}</button>
- <div class="meta">${t.owner?pill(t.owner):pill('sem responsável','warn')}${t.due?pill(fd(t.due),late?'late':''):pill('sem prazo','warn')}</div></div>`}
+ <div class="meta">${t.owner?pill(t.owner):pill('sem responsável','warn')}${t.due?pill(fd(t.due),late?'late':''):pill('sem prazo','warn')}</div>${mb}</div>`}
 function taskForm(base,t){
  openForm({title:t?'Editar tarefa':'Nova tarefa',req:'title',vals:t||base,
   fields:[{k:'title',l:'Tarefa',full:1},{k:'owner',l:'Responsável',t:'select',opts:['',...OWN,'Todas']},{k:'due',l:'Prazo',t:'date'},...(base.fase!==undefined?[{k:'fase',l:'Fase (agrupa a lista)',full:1}]:[]),{k:'note',l:'Observação',t:'area',full:1}],
@@ -763,12 +766,12 @@ function vCur(){
  const cs=D.courses;if(!S.course||!byId('courses',S.course))S.course=cs[0]&&cs[0].id;
  const c=byId('courses',S.course);
  let right='<div class="empty">Cadastre o primeiro curso para organizar tarefas e prazos.</div>';
- if(c){const ts=D.tasks.filter(t=>t.course===c.id);const done=ts.filter(t=>t.done).length;const showDone=!!S.showDone;const vis=showDone?ts:ts.filter(t=>!t.done);const isMod=f=>/^Módulo \d+/.test(f);const fnum=f=>+(/^Módulo (\d+)/.exec(f)||[0,0])[1];const fall=[...new Set(vis.map(t=>t.fase||'Geral'))];const fases=[...fall.filter(f=>!isMod(f)),...fall.filter(isMod).sort((a,b)=>fnum(a)-fnum(b))];const nDone=ts.filter(t=>t.done).length;const grade=D.gaveta.find(x=>x.id==='g_grade_curso'&&x.course===c.id&&x.url);const rowsOf=f=>vis.filter(t=>(t.fase||'Geral')===f).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:(a.due||'z')>(b.due||'z')?1:0)||String(a.title||'').localeCompare(String(b.title||''),'pt',{numeric:true})).map(taskRow).join('');
+ if(c){const ts=D.tasks.filter(t=>t.course===c.id);const done=ts.filter(t=>t.done).length;const showDone=!!S.showDone;const vis=showDone?ts:ts.filter(t=>!t.done);const isMod=f=>/^Módulo \d+/.test(f);const fnum=f=>+(/^Módulo (\d+)/.exec(f)||[0,0])[1];const hasM=t=>matList(t).length>0;const fall=[...new Set(vis.concat(ts.filter(hasM)).map(t=>t.fase||'Geral'))];const fases=[...fall.filter(f=>!isMod(f)),...fall.filter(isMod).sort((a,b)=>fnum(a)-fnum(b))];const nDone=ts.filter(t=>t.done).length;const grade=D.gaveta.find(x=>x.id==='g_grade_curso'&&x.course===c.id&&x.url);const rowsOf=(f,m)=>(m?ts:vis).filter(t=>(t.fase||'Geral')===f&&hasM(t)===m).sort((a,b)=>(a.done-b.done)||((a.due||'z')<(b.due||'z')?-1:(a.due||'z')>(b.due||'z')?1:0)||String(a.title||'').localeCompare(String(b.title||''),'pt',{numeric:true})).map(t=>taskRow(t,m?'mat':'cur')).join('');
   right=`  <div class="cblocks"><section class="cb cb-ds"><div class="row sp"><div><h3 style="font-size:1.3rem">${esc(c.name)}</h3><span class="small">${esc(c.tipo)} · ${esc(c.status)}${c.date?' · início '+fd(c.date):''}</span></div><div class="row"><button class="btn ghost sm" data-act="cedit" data-id="${c.id}">Editar curso</button><button class="btn sm" style="--ac-d:var(--mus-d)" data-act="ctask">Nova tarefa</button></div></div>
   ${c.desc?`<p class="lede" style="margin:8px 0">${esc(c.desc)}</p>`:''}</section><section class="cb cb-sk"><p class="cbl">ESQUELETO DO CURSO</p>${grade?`<h4>${esc(grade.title)}</h4><p class="small">${[grade.autora,grade.date].filter(Boolean).map(esc).join(' · ')}${grade.note?' · '+esc(grade.note):''}</p><div class="row" style="margin-top:auto"><a class="btn sm" href="${esc(grade.url)}" target="_blank" rel="noopener">ABRIR ↗</a><button class="btn ghost sm" data-act="gvedit" data-id="${grade.id}">Editar</button></div>`:'<div class="empty">Sem documento do esqueleto ainda.</div>'}</section></div>
   <hr class="dots"><h3 class="ltit">LISTA DE TAREFAS</h3>
-  <p class="small" style="margin:8px 0">${done} de ${ts.length} tarefas concluídas${ts.filter(t=>!t.due&&!t.done).length?` · <strong>${ts.filter(t=>!t.due&&!t.done).length} sem prazo</strong>`:''}${nDone?` · <button class="btn ghost sm" data-act="cdone">${showDone?'Ocultar':'Mostrar'} concluídas (${nDone})</button>`:''}</p>
-  ${[...fases.filter(isMod),...fases.filter(f=>!isMod(f))].map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="card" style="padding:4px 14px">${rowsOf(f)}</div>`).join('')||`<div class="empty">${ts.length?'Tudo concluído por aqui.':'Sem tarefas ainda.'}</div>`}`}
+  <p class="small" style="margin:8px 0">${done} de ${ts.length} tarefas concluídas${ts.filter(t=>!t.due&&!t.done).length?` · <strong>${ts.filter(t=>!t.due&&!t.done).length} sem prazo</strong>`:''}${ts.filter(hasM).length?` · ${ts.filter(hasM).length} com material`:''}${nDone?` · <button class="btn ghost sm" data-act="cdone">${showDone?'Ocultar':'Mostrar'} concluídas (${nDone})</button>`:''}</p>
+  ${[...fases.filter(isMod),...fases.filter(f=>!isMod(f))].map(f=>`<div class="sec"><h3>${esc(f)}</h3></div><div class="mcols"><div><p class="mch">POR MONTAR (${vis.filter(t=>(t.fase||'Geral')===f&&!hasM(t)).length})</p><div class="card" style="padding:4px 14px">${rowsOf(f,false)||'<p class="small" style="padding:10px 0">Nada por montar aqui.</p>'}</div></div><div><p class="mch">MONTADO (${ts.filter(t=>(t.fase||'Geral')===f&&hasM(t)).length})</p><div class="card" style="padding:4px 14px">${rowsOf(f,true)||'<p class="small" style="padding:10px 0">O material carregado aparece aqui.</p>'}</div></div></div>`).join('')||`<div class="empty">${ts.length?'Tudo concluído por aqui.':'Sem tarefas ainda.'}</div>`}`}
  return head('Online e presencial','Cursos','Cada curso com suas fases, tarefas, responsáveis e prazos.')+
  `<div class="row sp" style="margin-bottom:14px"><div class="sub" style="margin:0">${cs.map(x=>`<button aria-pressed="${x.id===S.course}" data-act="csel" data-id="${x.id}">${esc(x.name)}</button>`).join('')}</div><button class="btn ghost sm" data-act="cnew">Novo curso</button></div>`+(c?`<div class="cur2" id="cur2"><div>${right}</div>${gavetaHtml(c)}</div>`:right)}
 function courseForm(c){openForm({title:c?'Editar curso':'Novo curso',req:'name',vals:c||{tipo:'Online',status:'Em construção'},
@@ -982,6 +985,9 @@ document.addEventListener('click',async e=>{
  else if(a==='copy'){try{await navigator.clipboard.writeText(b.dataset.t);toast('Copiado')}catch(x){toast('Selecione o texto e copie')}}
  else if(a==='csel'){S.course=id;render()}
  else if(a==='cdone'){S.showDone=!S.showDone;render()}
+ else if(a==='matopen'){try{await MAT.open(b.dataset.p)}catch(x){toast('Não foi possível abrir o arquivo.')}}
+ else if(a==='matlink'){const tk=byId('tasks',b.dataset.id);if(!tk)return;openForm({title:'Colar link do material',req:'url',vals:{},fields:[{k:'url',l:'Link (Drive, YouTube, Canva…)',full:1,ph:'https://'},{k:'n',l:'Nome (opcional)',full:1}],onSave:r=>{const u=/^https?:\/\//.test(r.url)?r.url:'https://'+r.url;return upd('tasks',tk.id,{mat:[...matList(tk),{k:'link',n:r.n||u,p:u,at:TODAY,by:S.me||''}]})}})}
+ else if(a==='matundo'){const tk=byId('tasks',b.dataset.id);if(!tk)return;await safe(()=>upd('tasks',tk.id,{mat:[],matOld:[...(tk.matOld||[]),...matList(tk)]}),'Voltou para “Por montar”. O material anterior continua guardado.')}
  else if(a==='gvopen')gView(id)
  else if(a==='gvnew')gForm(null)
  else if(a==='gvedit')gForm(byId('gaveta',id))
@@ -1040,6 +1046,9 @@ document.addEventListener('change',async e=>{
  if(t.dataset.act==='tdone'){const tid=t.dataset.id,wasOn=t.checked;await safe(()=>upd('tasks',tid,{done:t.checked,doneAt:t.checked?TODAY:''}));if(wasOn&&S.tab==='cur'&&!S.showDone)toastUndo('Concluída. Ela saiu da lista; veja em “Mostrar concluídas”.',()=>safe(()=>upd('tasks',tid,{done:false,doneAt:''}),'Voltou para a lista'));const tk=byId('tasks',t.dataset.id);if(tk&&tk.meet){const md=byId('meets',tk.meet)||{},ls=String(md.pauta||'').split('\n').map(x=>x.trim()).filter(Boolean),i=ls.indexOf(tk.title);if(i>=0)await safe(()=>put('meets',tk.meet,Object.assign({},md,{pc:Object.assign({},md.pc||{},{[i]:t.checked})})))}}
  else if(t.dataset.act==='pchk'){const k=t.dataset.k,cur=(byId('meets',k)||{}).pc||{};await safe(()=>put('meets',k,Object.assign({},byId('meets',k)||{},{pc:Object.assign({},cur,{[t.dataset.i]:t.checked})})));{const ln=String((byId('meets',k)||{}).pauta||'').split('\n').map(x=>x.trim()).filter(Boolean)[+t.dataset.i];for(const x of D.tasks.filter(x=>x.meet===k&&x.title===ln&&!!x.done!==t.checked))await safe(()=>upd('tasks',x.id,{done:t.checked,doneAt:t.checked?TODAY:''}))}meetSheet(k)}
  else if(t.dataset.act==='mchk'){const k=t.dataset.k,cur=(byId('meets',k)||{}).checks||{};await safe(()=>put('meets',k,Object.assign({},byId('meets',k)||{},{checks:Object.assign({},cur,{[t.dataset.i]:t.checked})})));meetSheet(k)}
+ else if(t.dataset.act==='matup'){const f=t.files[0];if(!f)return;const tk=byId('tasks',t.dataset.id);if(!tk||!MAT){toast('Entre no Gestor com seu login para enviar.');return}
+  if(f.size>50*1024*1024){toast('Arquivo acima de 50 MB. Suba no Drive e use “Colar link”.');t.value='';return}
+  toast('Enviando '+f.name+'…');try{const path=await MAT.upload(tk.course,tk.id,f);await upd('tasks',tk.id,{mat:[...matList(tk),{k:'file',n:f.name,p:path,s:f.size,at:TODAY,by:S.me||''}]});toast('Material guardado. A tarefa passou para “Montado”.')}catch(x){toast('Não foi possível enviar. Só quem tem login no Gestor envia (limite de 50 MB).')}t.value=''}
  else if(t.id==='fotup'||t.id==='libup'){
   const isPhoto=t.id==='fotup';const files=[...t.files];if(!files.length)return;
   const alb=isPhoto?($('#alb').value.trim()||(S.album!=='Todos'?S.album:'Sem álbum')):'';toast('Enviando '+files.length+'…');
@@ -1092,6 +1101,11 @@ render();
    async update(o){await save(n,id,Object.assign({},cache[n][id]||{},JSON.parse(JSON.stringify(o))))},
    async delete(){const prev=cache[n][id];if(prev===undefined)return;const nv=Object.assign({},prev,{_del:true,_delBy:me&&me.nome||'',_delAt:new Date().toISOString()});await save(n,id,nv)}
   }}
+ };
+ MAT={
+  async upload(courseId,taskId,f){const nm=f.name.replace(/[^\w.\-]+/g,'_');const path='curso/'+courseId+'/'+taskId+'/'+Date.now()+'-'+nm;
+   const {error}=await sb.storage.from('gestor-materiais').upload(path,f,{upsert:false,contentType:f.type||'application/octet-stream'});if(error)throw error;return path},
+  async open(path){const {data,error}=await sb.storage.from('gestor-materiais').createSignedUrl(path,300);if(error)throw error;window.open(data.signedUrl,'_blank','noopener')}
  };
  Object.keys(D).forEach(n=>{subs[n]=subs[n]||[];cache[n]=cache[n]||{};watch(n)});
  async function enter(session){
